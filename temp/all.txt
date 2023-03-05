@@ -1,0 +1,141 @@
+MAKE AN ARDUINO TEMPERATURE SENSOR (THERMISTOR TUTORIAL)
+Posted by Scott Campbell | Arduino | 121 
+
+Make an Arduino Temperature Sensor (Thermistor Tutorial)
+Thermistors are simple, inexpensive, and accurate components that make it easy to get temperature data for your projects. Remote weather stations, home automation systems, and equipment control and protection circuits are some applications where thermistors would be ideal. They’re analog sensors, so the code is relatively simple compared to digital temperature sensors that require special libraries and lots of code.
+
+PCBWay Ad
+In this article, I’ll explain how thermistors work, then I’ll show you how to set up a basic thermistor circuit with an Arduino that will output temperature readings to the serial monitor or to an LCD.
+
+BONUS: I made a quick start guide for this tutorial that you can download and go back to later if you can’t set this up right now. It covers all of the steps, diagrams, and code you need to get started.
+HOW A THERMISTOR WORKS
+Thermistors are variable resistors that change their resistance with temperature. They are classified by the way their resistance responds to temperature changes. In Negative Temperature Coefficient (NTC) thermistors, resistance decreases with an increase in temperature. In Positive Temperature Coefficient (PTC) thermistors, resistance increases with an increase in temperature.
+
+NTC thermistors are the most common, and that’s the type we’ll be using in this tutorial. NTC thermistors are made from a semiconducting material (such as a metal oxide or ceramic) that’s been heated and compressed to form a temperature sensitive conducting material.
+
+The conducting material contains charge carriers that allow current to flow through it. High temperatures cause the semiconducting material to release more charge carriers. In NTC thermistors made from ferric oxide, electrons are the charge carriers. In nickel oxide NTC thermistors, the charge carriers are electron holes.
+
+Arduino Thermistor Temperature Sensor Voltage Divider Circuit
+A BASIC THERMISTOR CIRCUIT
+Let’s build a basic thermistor circuit to see how it works, so you can apply it to other projects later.
+
+Since the thermistor is a variable resistor, we’ll need to measure the resistance before we can calculate the temperature. However, the Arduino can’t measure resistance directly, it can only measure voltage.
+
+The Arduino will measure the voltage at a point between the thermistor and a known resistor. This is known as a voltage divider. The equation for a voltage divider is:
+
+Arduino Temperature Sensor - Voltage Divider Equation
+In terms of the voltage divider in a thermistor circuit, the variables in the equation above are:
+
+ Arduino Temperature Sensor - Voltage Divider Equation 2
+This equation can be rearranged and simplified to solve for R2, the resistance of the thermistor:
+
+JLPCB Ad
+ Arduino Temperature Sensor - Voltage Divider Equation 3
+Finally, the Steinhart-Hart equation is used to convert the resistance of the thermistor to a temperature reading.
+
+CONNECT THE CIRCUIT
+Connect the thermistor and resistor to your Arduino like this:
+
+Arduino Thermistor Basic Set Up Diagram
+The value of the resistor should be roughly equal to the resistance of your thermistor. In this case, the resistance of my thermistor is 100K Ohms, so my resistor is also 100K Ohms.
+
+The manufacturer of the thermistor might tell you it’s resistance, but if not, you can use a multimeter to find out. If you don’t have a multimeter, you can make an Ohm meter with your Arduino by following our Arduino Ohm Meter tutorial. You only need to know the magnitude of your thermistor. For example, if your thermistor resistance is 34,000 Ohms, it is a 10K thermistor. If it’s 340,000 Ohms, it’s a 100K thermsitor.
+
+CODE FOR SERIAL MONITOR OUTPUT OF TEMPERATURE READINGS
+After connecting the circuit above, upload this code to your Arduino to output the temperature readings to the serial monitor in Fahrenheit:
+
+int ThermistorPin = 0;
+int Vo;
+float R1 = 10000;
+float logR2, R2, T;
+float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+
+void setup() {
+Serial.begin(9600);
+}
+
+void loop() {
+
+  Vo = analogRead(ThermistorPin);
+  R2 = R1 * (1023.0 / (float)Vo - 1.0);
+  logR2 = log(R2);
+  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2));
+  T = T - 273.15;
+  T = (T * 9.0)/ 5.0 + 32.0; 
+
+  Serial.print("Temperature: "); 
+  Serial.print(T);
+  Serial.println(" F"); 
+
+  delay(500);
+}
+To display the temperature in degrees Celsius, just comment out line 18 by inserting two forward slashes (“//”) at the beginning of the line.
+
+This program will display Celsius and Fahrenheit at the same time:
+
+int ThermistorPin = 0;
+int Vo;
+float R1 = 10000;
+float logR2, R2, T, Tc, Tf;
+float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+
+void setup() {
+Serial.begin(9600);
+}
+
+void loop() {
+
+  Vo = analogRead(ThermistorPin);
+  R2 = R1 * (1023.0 / (float)Vo - 1.0);
+  logR2 = log(R2);
+  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2));
+  Tc = T - 273.15;
+  Tf = (Tc * 9.0)/ 5.0 + 32.0; 
+
+  Serial.print("Temperature: "); 
+  Serial.print(Tf);
+  Serial.print(" F; ");
+  Serial.print(Tc);
+  Serial.println(" C");   
+
+  delay(500);
+}
+CODE FOR LCD OUTPUT OF TEMPERATURE READINGS
+To output the temperature readings to a 16X2 LCD, follow our tutorial, How to Set Up an LCD Display on an Arduino, then upload this code to the board:
+
+#include <LiquidCrystal.h>
+
+int ThermistorPin = 0;
+int Vo;
+float R1 = 10000;
+float logR2, R2, T;
+float c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+void setup() {
+Serial.begin(9600);
+}
+
+void loop() {
+
+  Vo = analogRead(ThermistorPin);
+  R2 = R1 * (1023.0 / (float)Vo - 1.0);
+  logR2 = log(R2);
+  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2));
+  T = T - 273.15;
+  T = (T * 9.0)/ 5.0 + 32.0; 
+
+  lcd.print("Temp = ");
+  lcd.print(T);   
+  lcd.print(" F");
+  
+  delay(500);            
+  lcd.clear();
+}
+Here’s a video of the temperature sensor so you can watch me set it up and see how it works:
+
+
+Well, that’s about it. Just leave a comment below if you have any questions about this project. And if you like our articles here at Circuit Basics, subscribe and we’ll let you know when we publish new articles. Also, feel free to share this if you know anyone that would find it helpful!
+
+
